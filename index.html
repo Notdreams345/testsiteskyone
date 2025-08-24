@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="fr" class="scroll-smooth">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SkyOne — Serveur Minecraft Skyblock + Oneblock</title>
+  <meta name="description" content="SkyOne — serveur Minecraft mélange Skyblock + Oneblock : île perso avec bloc infini, économie dynamique, grades progressifs, jobs, quêtes, événements et boutique. Jouez maintenant !"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <meta property="og:title" content="SkyOne — Skyblock + Oneblock"/>
+  <meta property="og:description" content="Commence sur ton île avec un bloc infini, progresse, vends et domine l'économie !"/>
+  <meta property="og:type" content="website"/>
+  <meta name="theme-color" content="#22c55e"/>
+  <style>
+    :root{
+      --bg:#0a0f12;         /* fond */
+      --bg-2:#0b1116;       /* fond secondaire */
+      --card:#0f1720;       /* cartes */
+      --txt:#f1f5f9;        /* texte */
+      --muted:#9fb0bf;      /* texte secondaire */
+      --brand:#f97316;      /* orange */
+      --accent:#22c55e;     /* vert */
+      --ring: rgba(34,197,94,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial; color:var(--txt); background: radial-gradient(1200px 800px at 80% -10%, rgba(249,115,22,.15), transparent 60%), radial-gradient(1000px 800px at 10% 110%, rgba(34,197,94,.12), transparent 60%), linear-gradient(180deg, #070b0f 0%, #05080b 100%); overflow-x:hidden}
+
+    /* ===== Fullscreen Shader Canvas ===== */
+    #shader-canvas{ position:fixed; inset:0; width:100%; height:100%; z-index:-2; display:block }
+    .shader-overlay{ position:fixed; inset:-2px; z-index:-1; pointer-events:none; background:
+      radial-gradient(800px 500px at 15% 15%, rgba(249,115,22,.18), transparent 60%),
+      radial-gradient(600px 400px at 85% 15%, rgba(34,197,94,.18), transparent 60%),
+      radial-gradient(900px 600px at 50% 120%, rgba(34,197,94,.14), transparent 60%);
+      filter:saturate(115%);
+    }
+
+    /* ===== Utilities ===== */
+    .container{ width:min(1200px, 92vw); margin-inline:auto }
+    .glass{ background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.09); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05); border-radius:24px }
+    .btn{ display:inline-flex; align-items:center; gap:.6rem; padding:.9rem 1.2rem; border-radius:14px; border:1px solid rgba(255,255,255,.12); background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)); color:white; text-decoration:none; font-weight:800; letter-spacing:.2px; transition:transform .16s ease, box-shadow .2s ease, border-color .2s ease; box-shadow:0 10px 25px rgba(34,197,94,.18) }
+    .btn:hover{ transform:translateY(-2px); border-color: rgba(34,197,94,.45); box-shadow:0 20px 40px rgba(34,197,94,.22) }
+    .btn-primary{ background:linear-gradient(180deg, rgba(249,115,22,.35), rgba(34,197,94,.25)); border-color: rgba(249,115,22,.45) }
+    .btn-ghost{ background:transparent; border-color:rgba(255,255,255,.12) }
+    .chip{ display:inline-block; padding:.35rem .6rem; border-radius:999px; border:1px solid rgba(255,255,255,.12); color:var(--muted); font-weight:700; letter-spacing:.2px; backdrop-filter: blur(8px); background:rgba(255,255,255,.03) }
+
+    /* ===== Navbar / Router ===== */
+    .navbar{ position:sticky; top:0; z-index:50; backdrop-filter:saturate(160%) blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom:1px solid rgba(255,255,255,.06); background:linear-gradient(180deg, rgba(10,14,20,.65), rgba(10,14,20,.35)) }
+    .nav-inner{ display:flex; align-items:center; justify-content:space-between; padding:.8rem 0 }
+    .brand{ display:flex; align-items:center; gap:.7rem; font-weight:900; letter-spacing:.3px }
+    .brand .logo{ width:34px; height:34px; border-radius:10px; background:conic-gradient(from 90deg, var(--brand), var(--accent), #84cc16, #fb923c, var(--brand)); box-shadow:inset 0 0 12px rgba(255,255,255,.35), 0 8px 30px rgba(251,146,60,.35) }
+    .nav-links{ display:flex; gap:.4rem; align-items:center }
+    .nav-links a{ color:var(--muted); text-decoration:none; font-weight:700; padding:.6rem .8rem; border-radius:10px }
+    .nav-links a:hover{ background:rgba(255,255,255,.06); color:var(--txt) }
+    .nav-links a.active{ color:white; border:1px solid rgba(249,115,22,.45); background:linear-gradient(180deg, rgba(249,115,22,.25), rgba(34,197,94,.18)) }
+
+    /* ===== Hero (Accueil) ===== */
+    .hero{ position:relative; padding:clamp(88px, 13vh, 160px) 0 80px }
+    .hero-grid{ display:grid; grid-template-columns: 1.2fr .8fr; gap:2rem; align-items:center }
+    .title{ font-size: clamp(36px, 7vw, 64px); line-height:1.05; margin:0 0 10px; letter-spacing:-.02em; font-weight:900 }
+    .title .gradient{ background: linear-gradient(90deg, var(--brand), #fb923c 22%, #84cc16 60%, var(--accent) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; filter: drop-shadow(0 12px 40px rgba(34,197,94,.25)) }
+    .subtitle{ font-size: clamp(16px, 2.2vw, 20px); color:var(--muted); margin:0 0 22px }
+    .hero-cards{ display:grid; grid-template-columns:1fr 1fr; gap:1rem }
+    .card{ padding:1.2rem; border-radius:18px; border:1px solid rgba(255,255,255,.08); background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)); box-shadow:0 10px 25px rgba(0,0,0,.35); position:relative; overflow:hidden }
+    .card h4{ margin:0 0 .4rem; letter-spacing:.2px }
+    .spark{ position:absolute; inset:auto auto -50% -50%; width:420px; height:420px; background:radial-gradient(closest-side, rgba(249,115,22,.17), transparent 65%); transform:rotate(25deg); filter:blur(24px) }
+
+    /* ===== Pages ===== */
+    main{ min-height:60vh }
+    .page{ display:none }
+    .page.active{ display:block }
+
+    section{ padding:70px 0 }
+    h2.section-title{ font-size: clamp(28px, 4.2vw, 40px); margin:0 0 12px; letter-spacing:-.02em }
+    p.section-sub{ color:var(--muted); margin:0 0 30px }
+
+    .grid-3{ display:grid; grid-template-columns: repeat(3, 1fr); gap:1.1rem }
+    .grid-2{ display:grid; grid-template-columns: 1fr 1fr; gap:1.1rem }
+
+    .list{ margin:0; padding:0 0 0 18px; color:var(--muted) }
+
+    .grades{ display:grid; grid-template-columns: repeat(5, 1fr); gap:.8rem }
+    .grade{ padding:1rem; border-radius:16px; border:1px dashed rgba(255,255,255,.12); background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)); text-align:center; font-weight:800 }
+    .grade small{ display:block; color:var(--muted); font-weight:600 }
+
+    /* Pricing-like for boutique */
+    .pricing{ display:grid; grid-template-columns: repeat(3, 1fr); gap:1.2rem }
+    .price{ padding:1.2rem; border:1px solid rgba(255,255,255,.08); border-radius:20px; background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)); box-shadow:0 12px 28px rgba(0,0,0,.35) }
+    .price .tag{ font-weight:900; font-size:32px }
+
+    /* Footer */
+    footer{ padding:60px 0 80px; color:var(--muted); border-top:1px solid rgba(255,255,255,.06); background:linear-gradient(180deg, rgba(10,14,20,.35), rgba(10,14,20,.75)) }
+    .inp{ width:100%; padding:.8rem .9rem; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04); color:var(--txt); outline:none; transition:border-color .2s ease, box-shadow .2s ease }
+    .inp:focus{ border-color:var(--accent); box-shadow:0 0 0 6px var(--ring) }
+
+    /* Responsive */
+    @media (max-width: 1080px){ .hero-grid{ grid-template-columns:1fr } .grid-3{ grid-template-columns:1fr 1fr } .grades{ grid-template-columns:repeat(3,1fr) } }
+    @media (max-width: 720px){ .grid-3,.grid-2,.pricing{ grid-template-columns:1fr } .nav-links{ display:none } }
+
+    /* Micro anims */
+    @keyframes floaty{ 0%{ transform:translateY(0)} 50%{ transform:translateY(-8px)} 100%{ transform:translateY(0)} }
+    .floaty{ animation: floaty 6s ease-in-out infinite }
+    .shine{ position:relative; overflow:hidden }
+    .shine::after{ content:""; position:absolute; inset:0 -120%; transform:skewX(-25deg); background:linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent); animation: shine 5s infinite }
+    @keyframes shine{ 0%{ transform:translateX(-120%) skewX(-25deg)} 60%{ transform:translateX(120%) skewX(-25deg)} 100%{ transform:translateX(120%) skewX(-25deg)} }
+  </style>
+</head>
+<body>
+  <canvas id="shader-canvas"></canvas>
+  <div class="shader-overlay" aria-hidden="true"></div>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <div class="brand">
+        <div class="logo"></div>
+        <span>SkyOne</span>
+      </div>
+      <nav class="nav-links">
+        <a href="#accueil" data-route>Accueil</a>
+        <a href="#reseaux" data-route>Réseaux</a>
+        <a href="#jouer" data-route>Jouer</a>
+        <a href="#voter" data-route>Voter</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===== PAGE: ACCUEIL ===== -->
+    <div id="accueil" class="page active">
+      <section class="hero">
+        <div class="container hero-grid">
+          <div>
+            <div class="chip">Skyblock ✕ Oneblock • Bloc infini</div>
+            <h1 class="title">
+              Domine les cieux avec <span class="gradient">SkyOne</span>
+            </h1>
+            <p class="subtitle">Commence sur ton île <strong>personnelle</strong> avec un <strong>bloc infini</strong> au centre. Récolte, construis, vends et progresse dans une <strong>économie dynamique</strong>.
+            Jobs, quêtes, événements & récompenses de vote t’attendent.</p>
+            <div style="display:flex; gap:.8rem; align-items:center; flex-wrap:wrap; margin:20px 0 0">
+              <a href="#jouer" class="btn btn-primary shine">Rejoindre le serveur</a>
+              <a href="#reseaux" class="btn">Rejoindre la communauté</a>
+            </div>
+            <div style="display:flex; gap:1rem; align-items:center; margin:18px 0 0; color:var(--muted)">
+              <span><strong id="players">128</strong> joueurs en ligne</span> • <span>Anti‑DDoS • 1.20+</span> • <span>Uptime 99.9%</span>
+            </div>
+          </div>
+          <div class="glass floaty">
+            <div class="spark"></div>
+            <div style="padding:1.2rem">
+              <h3 style="margin-top:0">Le principe</h3>
+              <div class="grid-2" style="margin-top:.6rem">
+                <div class="card"><h4>Île perso</h4><p class="subtitle">Ta base évolutive, optimisable avec des améliorations gagnées en jeu.</p></div>
+                <div class="card"><h4>Bloc infini</h4><p class="subtitle">Casse le <em>bloc infini</em> pour générer ressources, coffres, mobs et surprises.</p></div>
+                <div class="card"><h4>Économie</h4><p class="subtitle">Vends au shop, fais des <strong>jobs</strong>, valide des <strong>quêtes</strong> et participe aux <strong>events</strong>.</p></div>
+                <div class="card"><h4>Progression</h4><p class="subtitle">Monte en <strong>grades</strong> pour débloquer commandes & avantages (ex: <code>/feed</code>, <code>/repair</code>).</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="container">
+        <h2 class="section-title">Économie & progression</h2>
+        <p class="section-sub">Gagne de l’argent rapidement grâce aux farms early‑game, aux jobs et aux quêtes. Utilise ta monnaie pour améliorer ton île et accéder à des ressources rares.</p>
+        <div class="grid-3">
+          <div class="card"><h4>Monnaie & Shop</h4><p class="subtitle">Vends tes items au <strong>shop</strong> en jeu (GUI). Achète blocs, outils, ressources de progression.</p></div>
+          <div class="card"><h4>Jobs & Quêtes</h4><p class="subtitle">Mineur, Fermier, Chasseur… progresse en répétant des tâches et en complétant des objectifs.</p></div>
+          <div class="card"><h4>Événements</h4><p class="subtitle">Concours d’îles, boss <em>MythicMobs</em>, drops spéciaux <em>ExcellentCrates</em> — récompenses uniques.</p></div>
+        </div>
+      </section>
+
+      <section class="container">
+        <h2 class="section-title">Grades progressifs</h2>
+        <p class="section-sub">Chaque grade <strong>inclut</strong> les avantages des précédents. Obtenus en jeu (pas d’achat direct pour la plupart).
+        </p>
+        <div class="grades">
+          <div class="grade" style="border-color:rgba(255,255,255,.15)">membre<small>Base</small></div>
+          <div class="grade">iron<small>Boost initial</small></div>
+          <div class="grade">gold<small>Qualité de vie</small></div>
+          <div class="grade">diamond<small>/back, /craft ?</small></div>
+          <div class="grade">emerauld<small>Bonus farms</small></div>
+          <div class="grade">netherite<small>/feed</small></div>
+          <div class="grade">elite<small>TP avancées</small></div>
+          <div class="grade">vip<small>Cosmétiques</small></div>
+          <div class="grade">vip+<small>+</small></div>
+          <div class="grade">vip++<small>++</small></div>
+          <div class="grade" style="grid-column:span 2">maxiprime<small>/repair & privilèges</small></div>
+        </div>
+      </section>
+
+      <section class="container">
+        <h2 class="section-title">Plugins principaux</h2>
+        <div class="grid-3">
+          <div class="card"><h4>AdvancedChat</h4><p class="subtitle">Chat custom & canaux.</p></div>
+          <div class="card"><h4>AdvancedEnchantments</h4><p class="subtitle">Enchantements spéciaux.</p></div>
+          <div class="card"><h4>AuraSkills</h4><p class="subtitle">Compétences auto.</p></div>
+          <div class="card"><h4>Citizens</h4><p class="subtitle">PNJ interactifs.</p></div>
+          <div class="card"><h4>EssentialsX</h4><p class="subtitle">Commandes basiques.</p></div>
+          <div class="card"><h4>LuckPerms</h4><p class="subtitle">Permissions & grades.</p></div>
+          <div class="card"><h4>Multiverse</h4><p class="subtitle">Multi‑mondes.</p></div>
+          <div class="card"><h4>EconomyShopGUI / QuickShop / Shopkeeper</h4><p class="subtitle">Boutiques & ventes.</p></div>
+          <div class="card"><h4>RoseStacker</h4><p class="subtitle">Empilement optimisé.</p></div>
+          <div class="card"><h4>DeluxeMenus</h4><p class="subtitle">Menus personnalisés.</p></div>
+          <div class="card"><h4>MythicMobs</h4><p class="subtitle">Boss & mécaniques.</p></div>
+          <div class="card"><h4>ExcellentCrates</h4><p class="subtitle">Crates & loot.</p></div>
+          <div class="card"><h4>CraftingStore</h4><p class="subtitle">Boutique externe.</p></div>
+        </div>
+      </section>
+
+      <section class="container">
+        <h2 class="section-title">Boutique (support)</h2>
+        <p class="section-sub">La boutique est <strong>complémentaire</strong> : les rangs spéciaux et clés peuvent aussi être gagnés en jeu, mais plus difficilement.</p>
+        <div class="pricing">
+          <div class="price"><div class="tag">Clés de crates</div><p class="subtitle">Loot aléatoire : cosmétiques, ressources rares, boosters.</p><a href="#jouer" class="btn btn-primary" style="margin-top:.6rem">Aller au Webshop</a></div>
+          <div class="price"><div class="tag">Rangs spéciaux</div><p class="subtitle">Accès privilégiés (non obligatoires) — s’obtiennent aussi par progression.</p><a href="#jouer" class="btn btn-primary" style="margin-top:.6rem">Voir les rangs</a></div>
+          <div class="price"><div class="tag">Cosmétiques & Boosters</div><p class="subtitle">Pur visuel & accélérateurs limités, sans briser l’équilibre.</p><a href="#jouer" class="btn btn-primary" style="margin-top:.6rem">Découvrir</a></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== PAGE: RÉSEAUX ===== -->
+    <div id="reseaux" class="page">
+      <section class="container" style="padding-top:90px">
+        <h2 class="section-title">Réseaux & communauté</h2>
+        <p class="section-sub">Suis l’actu, les annonces, les events et les vidéos de SkyOne.</p>
+        <div class="grid-3">
+          <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
+            <div>
+              <h4>Discord</h4>
+              <p class="subtitle">Rejoins le serveur pour le support, les annonces et les giveaways.</p>
+              <a class="btn btn-primary" href="https://discord.gg/ton-invite" target="_blank" rel="noreferrer">Rejoindre Discord</a>
+            </div>
+            <svg width="96" height="96" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 7.5c-1.2-.6-2.5-1-3.8-1.3-.2.4-.5.9-.7 1.3-1.4-.2-2.8-.2-4.2 0-.2-.5-.5-.9-.7-1.3C8.3 6.5 7 6.9 5.8 7.5 3.3 11.3 2.6 15 3 18.6c1.6 1.2 3.2 2 4.9 2.6.4-.6.8-1.3 1.1-2-.6-.2-1.2-.5-1.7-.8.1-.1.2-.2.3-.3 3.2 1.5 6.6 1.5 9.8 0 .1.1.2.2.3.3-.6.3-1.1.6-1.7.8.3.7.7 1.4 1.1 2 1.7-.6 3.3-1.4 4.9-2.6.5-3.7-.3-7.4-2.9-11.1Z" fill="currentColor"/></svg>
+          </div>
+          <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
+            <div>
+              <h4>YouTube</h4>
+              <p class="subtitle">Trailers, tutoriels farms et best-of des events.</p>
+              <a class="btn" href="https://youtube.com/@ton-yt" target="_blank" rel="noreferrer">S’abonner</a>
+            </div>
+            <svg width="96" height="96" viewBox="0 0 24 24" aria-hidden="true"><path d="M23.5 6.2a3.3 3.3 0 0 0-2.3-2.3C19 3.3 12 3.3 12 3.3s-7 0-9.2.6A3.3 3.3 0 0 0 .5 6.2 34 34 0 0 0 0 12a34 34 0 0 0 .5 5.8 3.3 3.3 0 0 0 2.3 2.3C5 20.7 12 20.7 12 20.7s7 0 9.2-.6a3.3 3.3 0 0 0 2.3-2.3c.4-1.8.5-3.8.5-5.8s0-4-.5-5.8zM9.7 15.5V8.5L15.8 12l-6 3.5z" fill="currentColor"/></svg>
+          </div>
+          <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
+            <div>
+              <h4>Twitch</h4>
+              <p class="subtitle">Streams des admins et creators — saisons & events.</p>
+              <a class="btn" href="https://twitch.tv/ton-twitch" target="_blank" rel="noreferrer">Suivre</a>
+            </div>
+            <svg width="96" height="96" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2h17v11.7l-4.8 4.8H12l-2.7 2.7H7.2V18H4V2Zm15.3 1.7H5.7v11.6h3.6v3.4l3.4-3.4h4.7l1.9-1.9V3.7ZM15 6.3h1.7v5H15v-5Zm-4.7 0H12v5H10.3v-5Z" fill="currentColor"/></svg>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== PAGE: JOUER ===== -->
+    <div id="jouer" class="page">
+      <section class="container" style="padding-top:90px">
+        <h2 class="section-title">Rejoindre SkyOne</h2>
+        <p class="section-sub">Version recommandée <strong>1.20+</strong>. Java & Bedrock support si activé. Invite tes amis et grimpez au classement d’îles !</p>
+        <div class="grid-2">
+          <div class="card">
+            <h4>IP du serveur</h4>
+            <p class="subtitle"><code id="server-ip">play.skyone.gg</code></p>
+            <div style="display:flex; gap:.6rem; flex-wrap:wrap">
+              <button id="copy-ip" class="btn btn-primary">Copier l’IP</button>
+              <a class="btn" href="https://shop.skyone.gg" target="_blank" rel="noreferrer">Webshop (CraftingStore)</a>
+            </div>
+            <ul class="list" style="margin-top:12px">
+              <li>Règles principales : respect, no cheat, pas de grief/toxicity, fair‑play.</li>
+              <li>Les rangs se débloquent en jouant (la boutique est optionnelle).</li>
+              <li>Protection avancée & anti‑DDoS, latence faible EU.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Commandes utiles</h4>
+            <ul class="list">
+              <li><code>/is</code> — gérer ton île</li>
+              <li><code>/shop</code> — vendre/acheter</li>
+              <li><code>/jobs</code> — rejoindre un job</li>
+              <li><code>/quests</code> — suivre tes quêtes</li>
+              <li><code>/vote</code> — voter & gagner des récompenses</li>
+              <li><code>/rankup</code> — progresser de grade</li>
+            </ul>
+            <div style="margin-top:12px"><a href="#voter" class="btn btn-primary shine">Voter maintenant</a></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== PAGE: VOTER ===== -->
+    <div id="voter" class="page">
+      <section class="container" style="padding-top:90px">
+        <h2 class="section-title">Vote & récompenses</h2>
+        <p class="section-sub">Vote chaque jour pour soutenir le serveur et gagne des clés, monnaie et bonus temporaires.</p>
+        <div class="grid-3">
+          <div class="card"><h4>ServeurPrivé.net</h4><p class="subtitle">+ Clé basique & monnaie</p><a class="btn btn-primary" href="https://www.serveur-prive.net/minecraft" target="_blank" rel="noreferrer">Voter</a></div>
+          <div class="card"><h4>ServeursMinecraft.org</h4><p class="subtitle">+ Clé rare</p><a class="btn btn-primary" href="https://serveurs-minecraft.org/" target="_blank" rel="noreferrer">Voter</a></div>
+          <div class="card"><h4>Liste Alternative</h4><p class="subtitle">+ Bonus aléatoire</p><a class="btn btn-primary" href="#" target="_blank" rel="noreferrer">Voter</a></div>
+        </div>
+        <div class="glass" style="padding:1rem; margin-top:1rem">
+          <p class="subtitle" style="margin:0"><strong>Astuce :</strong> active les notifications calendrier pour ne pas manquer tes votes quotidiens.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container" style="display:grid; grid-template-columns:1.2fr .8fr; gap:1.2rem; align-items:start">
+      <div>
+        <div class="brand" style="margin-bottom:8px"><div class="logo"></div><span style="font-weight:800;color:#e2e8f0">SkyOne</span></div>
+        <p>© <span id="year"></span> SkyOne. Non affilié à Mojang/微软.</p>
+      </div>
+      <div class="glass" style="padding:1rem">
+        <h4 style="margin:.2rem 0 .6rem">Contact</h4>
+        <form onsubmit="event.preventDefault(); alert('Message envoyé ✅'); this.reset();">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:.6rem">
+            <input required placeholder="Votre nom" class="inp"/>
+            <input required type="email" placeholder="Votre email" class="inp"/>
+          </div>
+          <textarea required placeholder="Votre message" rows="4" class="inp" style="margin-top:.6rem"></textarea>
+          <button class="btn btn-primary" style="margin-top:.6rem">Envoyer</button>
+        </form>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== Scripts ===== -->
+  <script>
+    // Year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Fake player count demo
+    const playersEl = document.getElementById('players');
+    if(playersEl){ setInterval(()=>{ const base = 120 + Math.random()*30; playersEl.textContent = Math.round(base); }, 2200); }
+
+    // Copy IP
+    const ipBtn = document.getElementById('copy-ip');
+    if(ipBtn){ ipBtn.addEventListener('click', async ()=>{ const ip = document.getElementById('server-ip').textContent.trim(); try{ await navigator.clipboard.writeText(ip); ipBtn.textContent = 'IP copiée ✔'; setTimeout(()=> ipBtn.textContent='Copier l’IP', 1600); }catch(e){ alert('Copie impossible, IP: '+ip); } }); }
+
+    // Magnetic buttons
+    document.querySelectorAll('.btn').forEach(btn=>{
+      btn.addEventListener('mousemove', e=>{ const r = btn.getBoundingClientRect(); const x = e.clientX - r.left; const y = e.clientY - r.top; btn.style.transform = `translateY(-2px) translate(${(x-r.width/2)/18}px, ${(y-r.height/2)/18}px)`; });
+      btn.addEventListener('mouseleave', ()=> btn.style.transform = 'translateY(0)');
+    });
+
+    // Intersection fade-up
+    const io = new IntersectionObserver((entries)=>{
+      for(const e of entries){ if(e.isIntersecting){ e.target.animate([{opacity:0, transform:'translateY(16px)'}, {opacity:1, transform:'translateY(0)'}], {duration:700, easing:'cubic-bezier(.22,.61,.36,1)', fill:'both'}); io.unobserve(e.target); } }
+    }, {threshold:.14});
+    document.querySelectorAll('section .card, .section-title, .section-sub, .price').forEach(el=> io.observe(el));
+
+    // Simple hash router
+    const routes = ['accueil','reseaux','jouer','voter'];
+    function setRoute(){
+      const hash = location.hash.replace('#','') || 'accueil';
+      routes.forEach(id=>{ const p = document.getElementById(id); if(p){ p.classList.toggle('active', id===hash); }});
+      document.querySelectorAll('[data-route]').forEach(a=> a.classList.toggle('active', a.getAttribute('href') === '#'+hash));
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+    window.addEventListener('hashchange', setRoute); setRoute();
+  </script>
+
+  <!-- ===== WebGL Shader Background (orange + vert) ===== -->
+  <script>
+    const vert = `#version 300 es
+precision highp float;
+layout(location=0) in vec2 pos;
+void main(){ gl_Position = vec4(pos,0.0,1.0); }`;
+
+    const frag = `#version 300 es
+precision highp float;
+out vec4 outColor;
+uniform vec2 uRes;
+uniform float uTime;
+
+float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
+float noise(in vec2 p){ vec2 i = floor(p); vec2 f = fract(p);
+  float a = hash(i); float b = hash(i + vec2(1.0,0.0)); float c = hash(i + vec2(0.0,1.0)); float d = hash(i + vec2(1.0,1.0));
+  vec2 u = f*f*(3.0-2.0*f);
+  return mix(a,b,u.x) + (c-a)*u.y*(1.0-u.x) + (d-b)*u.x*u.y; }
+float fbm(vec2 p){ float v=0.0; float a=.5; mat2 r = mat2(1.6,1.2,-1.2,1.6);
+  for(int i=0;i<6;i++){ v += a*noise(p); p = r*p*1.2; a *= .55; } return v; }
+
+void main(){ vec2 uv = (gl_FragCoord.xy - 0.5*uRes) / uRes.y;
+  float t = uTime * .05;
+  float n = fbm(uv*2.0 + t);
+  float m = fbm(uv*3.2 - t*1.1 + n);
+  vec3 c1 = vec3(0.07, 0.70, 0.25); // vert
+  vec3 c2 = vec3(0.98, 0.44, 0.10); // orange
+  vec3 c3 = vec3(0.15, 0.90, 0.35); // vert vif
+  float mixv = smoothstep(-.5, .9, uv.y + n*.18);
+  vec3 col = mix(c2, c1, mixv);
+  col = mix(col, c3, m*.45);
+  float v = smoothstep(1.2, .1, length(uv));
+  col *= v;
+  outColor = vec4(col, .85); }`;
+
+    const canvas = document.getElementById('shader-canvas');
+    const gl = canvas.getContext('webgl2', {premultipliedAlpha:false, alpha:true, antialias:true});
+    if(gl){
+      function resize(){ const dpr = Math.min(devicePixelRatio||1, 2); canvas.width = innerWidth*dpr; canvas.height = innerHeight*dpr; canvas.style.width = '100%'; canvas.style.height = '100%'; gl.viewport(0,0,canvas.width,canvas.height); if(uRes) gl.uniform2f(uRes, canvas.width, canvas.height); }
+      function compile(type, src){ const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){ console.error(gl.getShaderInfoLog(s)); } return s; }
+      const prog = gl.createProgram();
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER, vert));
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, frag));
+      gl.linkProgram(prog);
+      if(!gl.getProgramParameter(prog, gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(prog));
+      gl.useProgram(prog);
+      const quad = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, quad); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+      const loc=0; gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      const uRes = gl.getUniformLocation(prog, 'uRes');
+      const uTime = gl.getUniformLocation(prog, 'uTime');
+      resize(); addEventListener('resize', resize);
+      let start = performance.now();
+      function loop(t){ gl.uniform1f(uTime, (t-start)/1000); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); requestAnimationFrame(loop); }
+      requestAnimationFrame(loop);
+    }
+  </script>
+</body>
+</html>
